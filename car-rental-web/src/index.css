@@ -1,0 +1,19 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Tambahkan gaya kustom Anda di sini */
+body {
+    font-family: 'Inter', sans-serif; /* Pastikan Anda sudah menambahkan font ini di index.html */
+}
+
+.hero-bg {
+  background-image: linear-gradient(
+    to right,
+    rgba(0, 0, 0, 0.6),
+    rgba(0, 0, 0, 0.2)
+  ),
+  url('https://placehold.co/1200x600/334155/ffffff?text=Mobil+Impian+Anda');
+  background-size: cover;
+  background-position: center;
+}
