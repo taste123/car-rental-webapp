@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   getAllRentals,
   getCars,
@@ -136,16 +136,18 @@ export default function RentalHistoryPage({ token }) {
 
       if (newStatus === 'finished') {
         setToastMessage('Orderan selesai');
+      } else if (newStatus === 'cancelled') {
+        setToastMessage('Rental berhasil dibatalkan');
       } else {
         setToastMessage(`Status rental berhasil diperbarui!`);
       }
 
-      if (newStatus === 'finished') {
-        // Update ketersediaan mobil tapi abaikan error dan tanpa toast
+      // Update ketersediaan mobil jika status finished atau cancelled
+      if (newStatus === 'finished' || newStatus === 'cancelled') {
         try {
           const rental = rentals.find((r) => r.id === rentalId);
           if (rental) {
-            await updateCarAvailability(rental.car_id, { available: true }, token);
+            await updateCarAvailability(rental.car_id, true, token);
           }
         } catch {
           // silent fail
