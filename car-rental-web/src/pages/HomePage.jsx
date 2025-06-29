@@ -13,7 +13,6 @@ const HomePage = forwardRef(({ token, onNavigate }, ref) => {
         scrollToCars: () => {
             carListRef.current?.scrollIntoView({ behavior: 'smooth' });
         },
-        // Fungsi tambahan untuk scroll ke bagian atas hero
         scrollToTop: () => {
             window.scrollTo({ top: 0, behavior: 'smooth' });
         }

@@ -51,6 +51,45 @@ function Toast({ message, duration = 3000, onClose }) {
   );
 }
 
+// Komponen popup untuk validasi nama
+function NameValidationPopup({ isVisible, onConfirm, onCancel }) {
+  if (!isVisible) return null;
+
+  return (
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+      <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4 shadow-xl">
+        <div className="text-center">
+          <div className="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-yellow-100 mb-4">
+            <svg className="h-6 w-6 text-yellow-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z" />
+            </svg>
+          </div>
+          <h3 className="text-lg font-medium text-gray-900 mb-2">
+            Nama Lengkap Diperlukan
+          </h3>
+          <p className="text-sm text-gray-500 mb-6">
+            Untuk melanjutkan pemesanan, Anda perlu melengkapi nama lengkap terlebih dahulu. Silakan edit profil Anda.
+          </p>
+          <div className="flex space-x-3">
+            <button
+              onClick={onCancel}
+              className="flex-1 bg-gray-300 hover:bg-gray-400 text-gray-800 font-medium py-2 px-4 rounded-md transition duration-200"
+            >
+              Batal
+            </button>
+            <button
+              onClick={onConfirm}
+              className="flex-1 bg-sky-600 hover:bg-sky-700 text-white font-medium py-2 px-4 rounded-md transition duration-200"
+            >
+              Edit Profil
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function OrderPage({ carId, token, onNavigate, role }) {
   const [car, setCar] = useState(null);
   const [userProfile, setUserProfile] = useState(null);
@@ -59,6 +98,7 @@ function OrderPage({ carId, token, onNavigate, role }) {
   const [form, setForm] = useState({ startDate: '', endDate: '' });
   const [totalPrice, setTotalPrice] = useState(0);
   const [rentalDays, setRentalDays] = useState(0);
+  const [showNameValidation, setShowNameValidation] = useState(false);
 
   const [toastMessage, setToastMessage] = useState(null);
 
@@ -66,6 +106,22 @@ function OrderPage({ carId, token, onNavigate, role }) {
   const showToast = (msg) => {
     setToastMessage(null); // reset dulu supaya pesan bisa muncul ulang meski sama
     setTimeout(() => setToastMessage(msg), 50);
+  };
+
+  // Fungsi untuk mengecek apakah nama kosong atau blank
+  const isNameEmpty = (name) => {
+    return !name || name.trim() === '' || name === '-';
+  };
+
+  // Fungsi untuk menangani konfirmasi edit profil
+  const handleEditProfile = () => {
+    setShowNameValidation(false);
+    if (onNavigate) onNavigate('update-profile');
+  };
+
+  // Fungsi untuk membatalkan popup
+  const handleCancelPopup = () => {
+    setShowNameValidation(false);
   };
 
   useEffect(() => {
@@ -119,44 +175,47 @@ function OrderPage({ carId, token, onNavigate, role }) {
   };
 
   const handleSubmit = async (e) => {
-  e.preventDefault();
+    e.preventDefault();
 
-  if (rentalDays <= 0) {
-    showToast("Tanggal selesai harus setelah tanggal mulai (minimal 1 hari sewa).");
-    return;
-  }
-  if (!token) {
-    showToast("Silakan login terlebih dahulu.");
-    if (onNavigate) onNavigate('login');
-    return;
-  }
-  if (role !== 'customer') {
-    showToast("Hanya customer yang dapat menyewa.");
-    return;
-  }
+    if (rentalDays <= 0) {
+      showToast("Tanggal selesai harus setelah tanggal mulai (minimal 1 hari sewa).");
+      return;
+    }
+    if (!token) {
+      showToast("Silakan login terlebih dahulu.");
+      if (onNavigate) onNavigate('login');
+      return;
+    }
+    if (role !== 'customer') {
+      showToast("Hanya customer yang dapat menyewa.");
+      return;
+    }
 
-  try {
-    const startDateISO = form.startDate ? new Date(form.startDate + 'T00:00:00').toISOString() : '';
-    const endDateISO = form.endDate ? new Date(form.endDate + 'T00:00:00').toISOString() : '';
+    // Cek apakah nama lengkap sudah diisi
+    if (isNameEmpty(userProfile?.full_name)) {
+      setShowNameValidation(true);
+      return;
+    }
 
-    const result = await createRental({
-      car_id: car.id,
-      start_date: startDateISO,
-      end_date: endDateISO,
-    }, token);
+    try {
+      const startDateISO = form.startDate ? new Date(form.startDate + 'T00:00:00').toISOString() : '';
+      const endDateISO = form.endDate ? new Date(form.endDate + 'T00:00:00').toISOString() : '';
 
-    showToast(`Sukses! Rental ID: ${result.id}`);
+      const result = await createRental({
+        car_id: car.id,
+        start_date: startDateISO,
+        end_date: endDateISO,
+      }, token);
 
-    // Delay 3 detik sebelum navigasi
-    setTimeout(() => {
+      showToast(`Sukses! Rental ID: ${result.id}`);
+
+      // Immediately redirect to my-rentals page
       if (onNavigate) onNavigate('my-rentals');
-    }, 3000);
 
-  } catch (err) {
-    showToast('Gagal menyewa: ' + err.message);
-  }
-};
-
+    } catch (err) {
+      showToast('Gagal menyewa: ' + err.message);
+    }
+  };
 
   if (loading) return <div className="text-center mt-10 text-slate-500">Memuat data...</div>;
   if (error) return <div className="text-center text-red-500 mt-10">{error}</div>;
@@ -192,6 +251,19 @@ function OrderPage({ carId, token, onNavigate, role }) {
               <p><strong>Telepon:</strong> {userProfile.phone_number || '-'}</p>
               <p><strong>Alamat:</strong> {userProfile.address || '-'}</p>
             </div>
+            {/* Tampilkan warning jika nama kosong */}
+            {isNameEmpty(userProfile?.full_name) && (
+              <div className="mt-3 p-3 bg-yellow-50 border border-yellow-200 rounded-md">
+                <div className="flex items-center">
+                  <svg className="h-4 w-4 text-yellow-600 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z" />
+                  </svg>
+                  <span className="text-sm text-yellow-800">
+                    Nama lengkap diperlukan untuk melanjutkan pemesanan
+                  </span>
+                </div>
+              </div>
+            )}
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-4">
@@ -230,9 +302,12 @@ function OrderPage({ carId, token, onNavigate, role }) {
             <button
               type="submit"
               className="w-full bg-sky-600 text-white py-2 rounded font-semibold hover:bg-sky-700 transition disabled:bg-gray-400 disabled:cursor-not-allowed"
-              disabled={rentalDays <= 0}
+              disabled={rentalDays <= 0 || isNameEmpty(userProfile?.full_name)}
             >
-              Sewa Sekarang
+              {isNameEmpty(userProfile?.full_name) 
+                ? 'Lengkapi Nama Terlebih Dahulu' 
+                : 'Sewa Sekarang'
+              }
             </button>
 
             <div className="mt-4 bg-yellow-50 text-yellow-800 text-sm p-3 rounded-md border-l-4 border-yellow-500">
@@ -255,6 +330,13 @@ function OrderPage({ carId, token, onNavigate, role }) {
           duration={3000}
         />
       )}
+
+      {/* Tampilkan popup validasi nama */}
+      <NameValidationPopup
+        isVisible={showNameValidation}
+        onConfirm={handleEditProfile}
+        onCancel={handleCancelPopup}
+      />
     </div>
   );
 }

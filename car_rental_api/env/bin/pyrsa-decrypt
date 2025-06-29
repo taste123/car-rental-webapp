@@ -1,0 +1,10 @@
+#!/bin/sh
+'''exec' "/Users/raynzf/Library/CloudStorage/OneDrive-Personal/univ/sem4/code/final web/car-rental-webapp/car_rental_api/env/bin/python3.11" "$0" "$@"
+' '''
+# -*- coding: utf-8 -*-
+import re
+import sys
+from rsa.cli import decrypt
+if __name__ == '__main__':
+    sys.argv[0] = re.sub(r'(-script\.pyw|\.exe)?$', '', sys.argv[0])
+    sys.exit(decrypt())
